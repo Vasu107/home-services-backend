@@ -8,7 +8,8 @@
     "dev": "npx nodemon src/server.js",
     "start": "node src/server.js",
     "prisma:generate": "npx prisma generate",
-    "prisma:validate": "npx prisma validate"
+    "prisma:validate": "npx prisma validate",
+    "postinstall": "npx prisma generate"
   },
   "keywords": [],
   "author": "",
