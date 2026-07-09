@@ -6,11 +6,14 @@ export async function getCustomerDashboardStats(req, res, next) {
 
     const [
       customer,
+      totalBookings,
+      pendingBookings,
+      acceptedBookings,
+      completedBookings,
+      cancelledBookings,
+      providersCount,
       upcomingBookings,
       recentBookings,
-      totalBookings,
-      totalSpent,
-      providers,
     ] = await Promise.all([
       prisma.user.findUnique({
         where: {
@@ -21,6 +24,46 @@ export async function getCustomerDashboardStats(req, res, next) {
           name: true,
           email: true,
           address: true,
+        },
+      }),
+
+      prisma.booking.count({
+        where: {
+          customerId,
+        },
+      }),
+
+      prisma.booking.count({
+        where: {
+          customerId,
+          status: "PENDING",
+        },
+      }),
+
+      prisma.booking.count({
+        where: {
+          customerId,
+          status: "ACCEPTED",
+        },
+      }),
+
+      prisma.booking.count({
+        where: {
+          customerId,
+          status: "COMPLETED",
+        },
+      }),
+
+      prisma.booking.count({
+        where: {
+          customerId,
+          status: "CANCELLED",
+        },
+      }),
+
+      prisma.user.count({
+        where: {
+          role: "PROVIDER",
         },
       }),
 
@@ -40,12 +83,13 @@ export async function getCustomerDashboardStats(req, res, next) {
           },
           category: {
             select: {
+              id: true,
               name: true,
             },
           },
         },
         orderBy: {
-          createdAt: "asc",
+          preferredDate: "asc",
         },
         take: 5,
       }),
@@ -53,7 +97,6 @@ export async function getCustomerDashboardStats(req, res, next) {
       prisma.booking.findMany({
         where: {
           customerId,
-          status: "COMPLETED",
         },
         include: {
           provider: {
@@ -64,6 +107,7 @@ export async function getCustomerDashboardStats(req, res, next) {
           },
           category: {
             select: {
+              id: true,
               name: true,
             },
           },
@@ -73,41 +117,24 @@ export async function getCustomerDashboardStats(req, res, next) {
         },
         take: 5,
       }),
-
-      prisma.booking.count({
-        where: {
-          customerId,
-        },
-      }),
-
-      prisma.booking.aggregate({
-        where: {
-          customerId,
-          status: "COMPLETED",
-        },
-        _sum: {
-          totalAmount: true,
-        },
-      }),
-
-      prisma.user.count({
-        where: {
-          role: "PROVIDER",
-        },
-      }),
     ]);
 
-    res.json({
+    res.status(200).json({
       success: true,
       data: {
         customer,
+
         stats: {
-          upcomingBookings: upcomingBookings.length,
           totalBookings,
-          totalSpent: totalSpent._sum.totalAmount || 0,
-          providers,
+          pendingBookings,
+          acceptedBookings,
+          completedBookings,
+          cancelledBookings,
+          providersCount,
         },
+
         upcomingBookings,
+
         recentBookings,
       },
     });
