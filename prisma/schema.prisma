@@ -44,6 +44,7 @@ model Category {
   id          Int                 @id @default(autoincrement())
   name        String              @unique
   description String?
+  price       Decimal             @db.Decimal(10,2)
   isActive    Boolean             @default(true)
   providers   ProviderCategory[]
   bookings    Booking[]
@@ -52,13 +53,13 @@ model Category {
 }
 
 model ProviderCategory {
-  id         Int      @id @default(autoincrement())
-  provider   ProviderProfile @relation(fields: [providerProfileId], references: [id])
+  id                Int             @id @default(autoincrement())
+  provider          ProviderProfile @relation(fields: [providerProfileId], references: [id])
   providerProfileId Int
-  category   Category @relation(fields: [categoryId], references: [id])
-  categoryId Int
-  createdAt  DateTime @default(now())
-
+  category          Category        @relation(fields: [categoryId], references: [id])
+  categoryId        Int
+  price             Decimal         @db.Decimal(10,2)
+  createdAt         DateTime        @default(now())
   @@unique([providerProfileId, categoryId])
 }
 
