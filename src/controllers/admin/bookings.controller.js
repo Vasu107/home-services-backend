@@ -2,14 +2,41 @@ import { prisma } from "../../config/db.js";
 
 export async function createBooking(req, res, next) {
   try {
-    const { providerId, categoryId, address, preferredDate, preferredTime, problemDescription } = req.body;
+    const {
+      providerId,
+      categoryId,
+      address,
+      preferredDate,
+      preferredTime,
+      problemDescription,
+    } = req.body;
+
+    console.log("========== BOOKING DEBUG ==========");
+    console.log("Logged in User:", req.user.id, req.user.role);
+
+    console.log("ProviderId from body:", providerId);
+
     const provider = await prisma.user.findUnique({
-      where: { id: Number(providerId) },
-      include: { provider: true },
+      where: {
+        id: Number(providerId),
+      },
+      include: {
+        provider: true,
+      },
     });
 
-    if (!provider || provider.role !== "PROVIDER" || provider.provider?.status !== "APPROVED") {
-      return res.status(400).json({ success: false, message: "Selected provider is not available." });
+    console.log("Provider Object:", JSON.stringify(provider, null, 2));
+    console.log("===================================");
+
+    if (
+      !provider ||
+      provider.role !== "PROVIDER" ||
+      provider.provider?.status !== "APPROVED"
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Selected provider is not available.",
+      });
     }
 
     const booking = await prisma.booking.create({
@@ -18,13 +45,42 @@ export async function createBooking(req, res, next) {
         providerId: Number(providerId),
         categoryId: Number(categoryId),
         address,
-        preferredDate: preferredDate ? new Date(preferredDate) : undefined,
+        preferredDate: preferredDate
+          ? new Date(preferredDate)
+          : null,
         preferredTime,
         problemDescription,
+
+        // Booking request will remain pending
+        status: "PENDING",
+      },
+      include: {
+        customer: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        provider: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
-    res.status(201).json({ success: true, data: booking });
+    return res.status(201).json({
+      success: true,
+      message: "Booking confirmed successfully. Waiting for provider approval.",
+      data: booking,
+    });
   } catch (error) {
     next(error);
   }
@@ -50,21 +106,61 @@ export async function getBookings(req, res, next) {
 export async function updateBookingStatus(req, res, next) {
   try {
     const { status } = req.body;
-    const booking = await prisma.booking.findUnique({ where: { id: Number(req.params.id) } });
+
+    const booking = await prisma.booking.findUnique({
+      where: {
+        id: Number(req.params.id),
+      },
+    });
+
     if (!booking) {
-      return res.status(404).json({ success: false, message: "Booking not found." });
+      return res.status(404).json({
+        success: false,
+        message: "Booking not found.",
+      });
     }
 
-    if (req.user.role === "PROVIDER" && booking.providerId !== req.user.id) {
-      return res.status(403).json({ success: false, message: "Only the assigned provider can update this booking." });
+    // Only assigned provider can change booking status
+    if (req.user.role === "PROVIDER") {
+      if (booking.providerId !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: "Unauthorized.",
+        });
+      }
+
+      const allowedStatus = ["ACCEPTED", "COMPLETED", "CANCELLED"];
+
+      if (!allowedStatus.includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid booking status.",
+        });
+      }
     }
 
-    if (req.user.role === "CUSTOMER" && booking.customerId !== req.user.id) {
-      return res.status(403).json({ success: false, message: "Only the booking customer can update this booking." });
+    // Customer cannot change booking status
+    if (req.user.role === "CUSTOMER") {
+      return res.status(403).json({
+        success: false,
+        message: "Customers cannot update booking status.",
+      });
     }
 
-    const updated = await prisma.booking.update({ where: { id: booking.id }, data: { status } });
-    res.json({ success: true, data: updated });
+    const updatedBooking = await prisma.booking.update({
+      where: {
+        id: booking.id,
+      },
+      data: {
+        status,
+      },
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: `Booking ${status.toLowerCase()} successfully.`,
+      data: updatedBooking,
+    });
   } catch (error) {
     next(error);
   }

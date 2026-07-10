@@ -1,1 +1,3 @@
-export { getDashboardStats } from "../../controllers/admin/dashboard.controller.js";
+import { getProviderDashboard } from "../../controllers/provider/dashboard.controller.js";
+
+router.get("/", authenticate, getProviderDashboard);

@@ -133,8 +133,8 @@ export async function getCustomerDashboardStats(req, res, next) {
           providersCount,
         },
 
+        totalBookings,
         upcomingBookings,
-
         recentBookings,
       },
     });
