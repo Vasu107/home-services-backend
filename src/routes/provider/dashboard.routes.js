@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { getDashboardStats } from "../../controllers/admin/dashboard.controller.js";
 import { authenticate } from "../../middlewares/auth.middleware.js";
-import { authorize } from "../../middlewares/role.middleware.js";
+import { getProviderDashboard } from "../../controllers/provider/dashboard.controller.js";
 
 const router = Router();
 
-router.get("/", authenticate, authorize("PROVIDER"), getDashboardStats);
+router.use(authenticate);
+
+router.get("/", getProviderDashboard);
 
 export const dashboardRouter = router;

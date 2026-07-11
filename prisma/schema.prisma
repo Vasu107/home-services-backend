@@ -65,18 +65,30 @@ model ProviderCategory {
 
 model Booking {
   id                 Int            @id @default(autoincrement())
+
   customer           User           @relation("CustomerBookings", fields: [customerId], references: [id])
   customerId         Int
+
   provider           User           @relation("ProviderBookings", fields: [providerId], references: [id])
   providerId         Int
+
   category           Category       @relation(fields: [categoryId], references: [id])
   categoryId         Int
+
+  amount             Decimal        @db.Decimal(10,2) 
+
   address            String?
+
   preferredDate      DateTime?
+
   preferredTime      String?
+
   problemDescription String?
+
   status             BookingStatus  @default(PENDING)
+
   createdAt          DateTime       @default(now())
+
   updatedAt          DateTime       @updatedAt
 }
 
