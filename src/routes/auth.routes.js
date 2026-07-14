@@ -9,4 +9,5 @@ router.post("/register", validateBody(["name", "email", "password"]), register);
 router.post("/login", validateBody(["email", "password"]), login);
 router.get("/me", authenticate, me);
 
+
 export const authRouter = router;

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getProfile, updateProfile } from "../../controllers/admin/users.controller.js";
+import { getProfile, updateProfile } from "../../controllers/provider/profile.controller.js";
 import { authenticate } from "../../middlewares/auth.middleware.js";
 import { validateBody } from "../../middlewares/validate.middleware.js";
 

@@ -32,6 +32,7 @@ model ProviderProfile {
   about           String?
   experienceYears Int?
   serviceCharge   Decimal?
+  profileImage    String?
   rating          Float?              @default(0)
   availability    Boolean             @default(true)
   status          ProviderStatus      @default(PENDING)
@@ -75,7 +76,7 @@ model Booking {
   category           Category       @relation(fields: [categoryId], references: [id])
   categoryId         Int
 
-  amount             Decimal        @db.Decimal(10,2) 
+  amount             Decimal        @db.Decimal(10,2)
 
   address            String?
 
@@ -87,9 +88,23 @@ model Booking {
 
   status             BookingStatus  @default(PENDING)
 
+  payment            Payment?
+
   createdAt          DateTime       @default(now())
 
   updatedAt          DateTime       @updatedAt
+}
+
+model Payment {
+  id            Int           @id @default(autoincrement())
+  booking       Booking       @relation(fields: [bookingId], references: [id])
+  bookingId     Int           @unique
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  amount        Decimal       @db.Decimal(10,2)
+  transactionId String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 }
 
 model Notification {
@@ -120,8 +135,22 @@ enum ProviderStatus {
 enum BookingStatus {
   PENDING
   ACCEPTED
+  CONFIRMED
   COMPLETED
   CANCELLED
+}
+
+enum PaymentMethod {
+  UPI
+  CARD
+  NET_BANKING
+  CASH_ON_SERVICE
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
 }
 
 enum NotificationType {

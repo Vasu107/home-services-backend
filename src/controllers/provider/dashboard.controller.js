@@ -1,5 +1,6 @@
 import { prisma } from "../../config/db.js";
 
+
 export async function getProviderDashboard(req, res, next) {
   try {
     const providerId = req.user.id;
@@ -101,28 +102,28 @@ export async function getProviderDashboard(req, res, next) {
 
         include: {
 
-          customer:{
-            select:{
-              id:true,
-              name:true,
-              email:true,
-              phone:true,
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
             }
           },
 
 
-          category:{
-            select:{
-              id:true,
-              name:true,
+          category: {
+            select: {
+              id: true,
+              name: true,
             }
           }
 
         },
 
 
-        orderBy:{
-          preferredTime:"asc",
+        orderBy: {
+          preferredTime: "asc",
         }
 
       }),
@@ -133,36 +134,36 @@ export async function getProviderDashboard(req, res, next) {
       // Pending Booking Requests
       prisma.booking.findMany({
 
-        where:{
+        where: {
           providerId,
-          status:"PENDING",
+          status: "PENDING",
         },
 
 
-        include:{
+        include: {
 
-          customer:{
-            select:{
-              id:true,
-              name:true,
-              email:true,
-              phone:true,
+          customer: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
             }
           },
 
 
-          category:{
-            select:{
-              id:true,
-              name:true,
+          category: {
+            select: {
+              id: true,
+              name: true,
             }
           }
 
         },
 
 
-        orderBy:{
-          createdAt:"desc",
+        orderBy: {
+          createdAt: "desc",
         }
 
       }),
@@ -173,14 +174,14 @@ export async function getProviderDashboard(req, res, next) {
       // Earnings
       prisma.booking.aggregate({
 
-        where:{
+        where: {
           providerId,
-          status:"COMPLETED",
+          status: "COMPLETED",
         },
 
 
-        _sum:{
-          amount:true,
+        _sum: {
+          amount: true,
         }
 
       })
@@ -189,15 +190,23 @@ export async function getProviderDashboard(req, res, next) {
 
 
 
-    if(!provider){
+    if (!provider) {
 
       return res.status(404).json({
 
-        success:false,
-        message:"Provider not found"
+        success: false,
+        message: "Provider not found"
 
       });
 
+    }
+
+    if (!provider.provider) {
+      return res.status(200).json({
+        success: true,
+        profileCompleted: false,
+        message: "Please complete your profile first."
+      });
     }
 
 
@@ -207,8 +216,8 @@ export async function getProviderDashboard(req, res, next) {
       totalBookings === 0
         ? 0
         : Math.round(
-            (completedBookings / totalBookings) * 100
-          );
+          (completedBookings / totalBookings) * 100
+        );
 
 
 
@@ -223,40 +232,41 @@ export async function getProviderDashboard(req, res, next) {
 
     return res.status(200).json({
 
-      success:true,
+      success: true,
 
 
-      data:{
+      data: {
 
 
-        provider:{
+        provider: {
+          id: provider.id,
 
-          id:provider.id,
+          name: provider.name,
 
-          name:provider.name,
+          email: provider.email,
 
-          email:provider.email,
+          about: provider.provider?.about || "",
 
-          rating:
-            provider.provider?.rating || 0,
+          experience: provider.provider?.experienceYears || 0,
 
+          serviceCharge: provider.provider?.serviceCharge || 0,
 
-          experience:
-            provider.provider?.experienceYears || 0,
+          availability: provider.provider?.availability || false,
 
+          rating: provider.provider?.rating || 0,
 
-          serviceCharge:
-            provider.provider?.serviceCharge || 0,
+          status: provider.provider?.status || "PENDING",
 
-
-          availability:
-            provider.provider?.availability || false,
-
+          profileCompleted: Boolean(
+            provider.provider?.about &&
+            provider.provider?.experienceYears &&
+            provider.provider?.serviceCharge
+          ),
         },
 
 
 
-        stats:{
+        stats: {
 
 
           monthlyEarnings,
@@ -295,12 +305,12 @@ export async function getProviderDashboard(req, res, next) {
 
 
         todaysJobs:
-          todaysJobs.map(job=>({
+          todaysJobs.map(job => ({
 
-            id:job.id,
+            id: job.id,
 
 
-            customer:job.customer,
+            customer: job.customer,
 
 
             service:
@@ -335,13 +345,13 @@ export async function getProviderDashboard(req, res, next) {
 
         pendingRequests:
 
-          requests.map(job=>({
+          requests.map(job => ({
 
 
-            id:job.id,
+            id: job.id,
 
 
-            customer:job.customer,
+            customer: job.customer,
 
 
             service:
@@ -378,7 +388,7 @@ export async function getProviderDashboard(req, res, next) {
     });
 
 
-  } catch(error){
+  } catch (error) {
 
     next(error);
 
