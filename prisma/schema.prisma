@@ -8,116 +8,162 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ─────────────────────────────────────────
+// USER
+// Roles: ADMIN | CUSTOMER | PROVIDER
+// ─────────────────────────────────────────
 model User {
-  id          Int           @id @default(autoincrement())
-  name        String
-  email       String        @unique
-  password    String
-  phone       String?       @unique
-  address     String?
-  role        UserRole      @default(CUSTOMER)
-  isBlocked   Boolean       @default(false)
-  provider    ProviderProfile?
-  customerBookings Booking[] @relation("CustomerBookings")
-  providerBookings Booking[] @relation("ProviderBookings")
-  notifications Notification[]
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id               Int              @id @default(autoincrement())
+  name             String
+  email            String           @unique
+  password         String
+  phone            String?          @unique
+  address          String?
+  role             UserRole         @default(CUSTOMER)
+  isBlocked        Boolean          @default(false)
+
+  // Relations
+  provider         ProviderProfile?
+  customerBookings Booking[]        @relation("CustomerBookings")
+  providerBookings Booking[]        @relation("ProviderBookings")
+  notifications    Notification[]
+
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 }
 
+// ─────────────────────────────────────────
+// PROVIDER PROFILE
+// Created automatically on PROVIDER register
+// ─────────────────────────────────────────
 model ProviderProfile {
-  id              Int                 @id @default(autoincrement())
-  user            User                @relation(fields: [userId], references: [id])
-  userId          Int                 @unique
+  id              Int                @id @default(autoincrement())
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          Int                @unique
+
   about           String?
   experienceYears Int?
-  serviceCharge   Decimal?
+  serviceCharge   Decimal?           @db.Decimal(10, 2)
   profileImage    String?
-  rating          Float?              @default(0)
-  availability    Boolean             @default(true)
-  status          ProviderStatus      @default(PENDING)
+  rating          Float              @default(0)
+  availability    Boolean            @default(true)
+  status          ProviderStatus     @default(PENDING)
+
+  // Relations
   categories      ProviderCategory[]
-  createdAt       DateTime            @default(now())
-  updatedAt       DateTime            @updatedAt
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
 }
 
+// ─────────────────────────────────────────
+// CATEGORY
+// Managed by Admin
+// ─────────────────────────────────────────
 model Category {
-  id          Int                 @id @default(autoincrement())
-  name        String              @unique
+  id          Int                @id @default(autoincrement())
+  name        String             @unique
   description String?
-  price       Decimal             @default(0) @db.Decimal(10,2)
-  isActive    Boolean             @default(true)
+  icon        String?            // optional icon/image URL
+  price       Decimal            @default(0) @db.Decimal(10, 2)
+  isActive    Boolean            @default(true)
+
+  // Relations
   providers   ProviderCategory[]
   bookings    Booking[]
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
+
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
 }
 
+// ─────────────────────────────────────────
+// PROVIDER <-> CATEGORY (many-to-many join)
+// Provider's custom price per category
+// ─────────────────────────────────────────
 model ProviderCategory {
   id                Int             @id @default(autoincrement())
-  provider          ProviderProfile @relation(fields: [providerProfileId], references: [id])
+  provider          ProviderProfile @relation(fields: [providerProfileId], references: [id], onDelete: Cascade)
   providerProfileId Int
-  category          Category        @relation(fields: [categoryId], references: [id])
+  category          Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   categoryId        Int
-  price             Decimal         @db.Decimal(10,2)
+
+  price             Decimal         @default(0) @db.Decimal(10, 2)
+
   createdAt         DateTime        @default(now())
+
   @@unique([providerProfileId, categoryId])
 }
 
+// ─────────────────────────────────────────
+// BOOKING
+// Created by CUSTOMER, managed by PROVIDER/ADMIN
+// ─────────────────────────────────────────
 model Booking {
-  id                 Int            @id @default(autoincrement())
+  id                 Int           @id @default(autoincrement())
 
-  customer           User           @relation("CustomerBookings", fields: [customerId], references: [id])
+  customer           User          @relation("CustomerBookings", fields: [customerId], references: [id])
   customerId         Int
 
-  provider           User           @relation("ProviderBookings", fields: [providerId], references: [id])
+  provider           User          @relation("ProviderBookings", fields: [providerId], references: [id])
   providerId         Int
 
-  category           Category       @relation(fields: [categoryId], references: [id])
+  category           Category      @relation(fields: [categoryId], references: [id])
   categoryId         Int
 
-  amount             Decimal        @default(0) @db.Decimal(10,2)
-
+  amount             Decimal       @default(0) @db.Decimal(10, 2)
   address            String?
-
   preferredDate      DateTime?
-
   preferredTime      String?
-
   problemDescription String?
 
-  status             BookingStatus  @default(PENDING)
+  status             BookingStatus @default(PENDING)
 
+  // Relations
   payment            Payment?
 
-  createdAt          DateTime       @default(now())
-
-  updatedAt          DateTime       @updatedAt
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 }
 
+// ─────────────────────────────────────────
+// PAYMENT
+// Auto-created when a Booking is created
+// ─────────────────────────────────────────
 model Payment {
   id            Int           @id @default(autoincrement())
-  booking       Booking       @relation(fields: [bookingId], references: [id])
+  booking       Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
   bookingId     Int           @unique
+
   method        PaymentMethod
   status        PaymentStatus @default(PENDING)
-  amount        Decimal       @db.Decimal(10,2)
+  amount        Decimal       @db.Decimal(10, 2)
   transactionId String?
+
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 }
 
+// ─────────────────────────────────────────
+// NOTIFICATION
+// Sent to users for booking/system events
+// ─────────────────────────────────────────
 model Notification {
-  id         Int              @id @default(autoincrement())
-  user       User             @relation(fields: [userId], references: [id])
-  userId     Int
-  type       NotificationType
-  title      String
-  message    String
-  link       String?
-  isRead     Boolean          @default(false)
-  createdAt  DateTime         @default(now())
+  id        Int              @id @default(autoincrement())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+
+  type      NotificationType
+  title     String
+  message   String
+  link      String?
+  isRead    Boolean          @default(false)
+
+  createdAt DateTime         @default(now())
 }
+
+// ─────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────
 
 enum UserRole {
   ADMIN
