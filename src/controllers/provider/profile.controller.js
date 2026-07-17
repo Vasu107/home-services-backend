@@ -34,17 +34,19 @@ export async function updateProfile(req, res, next) {
       }),
     ]);
 
-    if (Array.isArray(categoryIds) && categoryIds.length > 0) {
+    if (Array.isArray(categoryIds)) {
       const profile = await prisma.providerProfile.findUnique({ where: { userId: req.user.id } });
       await prisma.providerCategory.deleteMany({ where: { providerProfileId: profile.id } });
-      await prisma.providerCategory.createMany({
-        data: categoryIds.map((catId) => ({
-          providerProfileId: profile.id,
-          categoryId: Number(catId),
-          price: serviceCharge ? Number(serviceCharge) : 0,
-        })),
-        skipDuplicates: true,
-      });
+      if (categoryIds.length > 0) {
+        await prisma.providerCategory.createMany({
+          data: categoryIds.map((catId) => ({
+            providerProfileId: profile.id,
+            categoryId: Number(catId),
+            price: serviceCharge ? Number(serviceCharge) : 0,
+          })),
+          skipDuplicates: true,
+        });
+      }
     }
 
     const updated = await prisma.user.findUnique({

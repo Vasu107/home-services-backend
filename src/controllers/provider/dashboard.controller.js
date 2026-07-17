@@ -117,6 +117,13 @@ export async function getProviderDashboard(req, res, next) {
               id: true,
               name: true,
             }
+          },
+
+          payment: {
+            select: {
+              status: true,
+              method: true,
+            }
           }
 
         },
@@ -336,6 +343,8 @@ export async function getProviderDashboard(req, res, next) {
             problem:
               job.problemDescription,
 
+            paymentStatus:
+              job.payment?.status || "PENDING",
 
           })),
 

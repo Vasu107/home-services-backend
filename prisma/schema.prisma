@@ -47,7 +47,7 @@ model ProviderProfile {
   profileImage    String?
   rating          Float              @default(0)
   availability    Boolean            @default(true)
-  status          ProviderStatus     @default(PENDING)
+  status          ProviderStatus     @default(APPROVED)
 
   // Relations
   categories      ProviderCategory[]
