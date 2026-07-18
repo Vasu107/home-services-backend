@@ -33,3 +33,13 @@ export async function updateCategory(req, res, next) {
     next(error);
   }
 }
+export async function deleteCategory(req, res, next) {
+  try {
+    await prisma.category.delete({
+      where: { id: Number(req.params.id) },
+    });
+    res.json({ success: true, message: "Category deleted" });
+  } catch (error) {
+    next(error);
+  }
+}

@@ -12,6 +12,16 @@ export async function getProviderDashboard(req, res, next) {
     tomorrow.setDate(today.getDate() + 1);
 
 
+    // Build last-7-days date range
+    const last7Days = [];
+    for (let d = 6; d >= 0; d--) {
+      const day = new Date();
+      day.setHours(0, 0, 0, 0);
+      day.setDate(day.getDate() - d);
+      last7Days.push(day);
+    }
+    const sevenDaysAgo = last7Days[0];
+
     const [
       provider,
       totalBookings,
@@ -22,6 +32,7 @@ export async function getProviderDashboard(req, res, next) {
       todaysJobs,
       requests,
       earnings,
+      revenueBookings,
     ] = await Promise.all([
 
 
@@ -178,20 +189,29 @@ export async function getProviderDashboard(req, res, next) {
 
 
 
-      // Earnings
+      // Total Earnings
       prisma.booking.aggregate({
-
         where: {
           providerId,
           status: "COMPLETED",
         },
-
-
         _sum: {
           amount: true,
         }
+      }),
 
-      })
+      // Last 7 days completed bookings for revenue chart
+      prisma.booking.findMany({
+        where: {
+          providerId,
+          status: "COMPLETED",
+          updatedAt: { gte: sevenDaysAgo },
+        },
+        select: {
+          amount: true,
+          updatedAt: true,
+        },
+      }),
 
     ]);
 
@@ -274,39 +294,31 @@ export async function getProviderDashboard(req, res, next) {
 
 
         stats: {
-
-
           monthlyEarnings,
-
-
-          todayJobs:
-            todaysJobs.length,
-
-
-          averageRating:
-            provider.provider?.rating || 0,
-
-
+          todayJobs: todaysJobs.length,
+          averageRating: provider.provider?.rating || 0,
           completionRate,
-
-
-
           totalBookings,
-
-
           pendingRequests,
-
-
           acceptedBookings,
-
-
           completedBookings,
-
-
           cancelledBookings,
-
-
         },
+
+        revenueByDay: last7Days.map((dayDate) => {
+          const dayLabel = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][dayDate.getDay()];
+          const dayTotal = revenueBookings
+            .filter((b) => {
+              const d = new Date(b.updatedAt);
+              return (
+                d.getFullYear() === dayDate.getFullYear() &&
+                d.getMonth() === dayDate.getMonth() &&
+                d.getDate() === dayDate.getDate()
+              );
+            })
+            .reduce((sum, b) => sum + Number(b.amount || 0), 0);
+          return { day: dayLabel, amount: dayTotal };
+        }),
 
 
 

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getProfile, updateProfile, listProviders } from "../../controllers/admin/users.controller.js";
+import { getProfile, updateProfile, listProviders, listAllUsers, blockUnblockUser } from "../../controllers/admin/users.controller.js";
 import { authenticate } from "../../middlewares/auth.middleware.js";
 import { authorize } from "../../middlewares/role.middleware.js";
 import { validateBody } from "../../middlewares/validate.middleware.js";
@@ -12,5 +12,7 @@ router.use(authorize("ADMIN"));
 router.get("/me", getProfile);
 router.put("/me", validateBody(["name"]), updateProfile);
 router.get("/providers", listProviders);
+router.get("/", listAllUsers);
+router.patch("/:id/block", blockUnblockUser);
 
 export const usersRouter = router;

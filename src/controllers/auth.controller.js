@@ -37,7 +37,7 @@ export async function register(req, res, next) {
                   serviceCharge: 0,
                   availability: true,
                   rating: 0,
-                  status: "APPROVED", // Auto approved
+                  status: "PENDING", // Wait for admin approval
                 },
               }
             : undefined,
