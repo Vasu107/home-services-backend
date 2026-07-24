@@ -47,9 +47,9 @@ export async function updateProfile(req, res, next) {
             availability,
 
             // Uncomment if your schema supports categories
-            // categories: {
-            //   set: categories.map((id) => ({ id })),
-            // },
+            categories: {
+              set: categories.map((id) => ({ id })),
+            },
           },
         },
       },
@@ -70,8 +70,36 @@ export async function updateProfile(req, res, next) {
 
 export async function listProviders(req, res, next) {
   try {
+    const { category, categoryId } = req.query;
+
+    const where = {
+      role: "PROVIDER",
+      provider: {
+        status: "APPROVED",
+      },
+    };
+
+    if (categoryId) {
+      where.provider.categories = {
+        some: {
+          categoryId: Number(categoryId),
+        },
+      };
+    } else if (category) {
+      where.provider.categories = {
+        some: {
+          category: {
+            name: {
+              equals: category,
+              mode: "insensitive",
+            },
+          },
+        },
+      };
+    }
+
     const providers = await prisma.user.findMany({
-      where: { role: "PROVIDER", provider: { status: "APPROVED" } },
+      where,
       include: { provider: { include: { categories: { include: { category: true } } } } },
     });
     res.json({ success: true, data: providers.map(sanitizeUser) });

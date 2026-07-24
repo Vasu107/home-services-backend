@@ -92,14 +92,13 @@ export async function getProviderDashboard(req, res, next) {
 
 
 
-      // Today's Jobs
+      // Upcoming Jobs (today + future dates)
       prisma.booking.findMany({
         where: {
           providerId,
 
           preferredDate: {
             gte: today,
-            lt: tomorrow,
           },
 
           status: {
@@ -140,9 +139,10 @@ export async function getProviderDashboard(req, res, next) {
         },
 
 
-        orderBy: {
-          preferredTime: "asc",
-        }
+        orderBy: [
+          { preferredDate: "asc" },
+          { preferredTime: "asc" },
+        ]
 
       }),
 
@@ -295,7 +295,11 @@ export async function getProviderDashboard(req, res, next) {
 
         stats: {
           monthlyEarnings,
-          todayJobs: todaysJobs.length,
+          todayJobs: todaysJobs.filter(j => {
+            const d = new Date(j.preferredDate);
+            return d >= today && d < tomorrow;
+          }).length,
+          upcomingJobs: todaysJobs.length,
           averageRating: provider.provider?.rating || 0,
           completionRate,
           totalBookings,
@@ -323,7 +327,7 @@ export async function getProviderDashboard(req, res, next) {
 
 
 
-        todaysJobs:
+        upcomingJobs:
           todaysJobs.map(job => ({
 
             id: job.id,
