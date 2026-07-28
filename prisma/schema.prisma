@@ -8,10 +8,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─────────────────────────────────────────
-// USER
-// Roles: ADMIN | CUSTOMER | PROVIDER
-// ─────────────────────────────────────────
 model User {
   id               Int              @id @default(autoincrement())
   name             String
@@ -21,6 +17,9 @@ model User {
   address          String?
   role             UserRole         @default(CUSTOMER)
   isBlocked        Boolean          @default(false)
+
+  // Push Notification Token
+  fcmToken         String?
 
   // Relations
   provider         ProviderProfile?

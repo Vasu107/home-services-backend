@@ -4,6 +4,7 @@ import { bookingsRouter } from "./bookings.routes.js";
 import { providersRouter } from "./providers.routes.js";
 import { categoriesRouter } from "./categories.routes.js";
 import { dashboardRouter } from "./dashboard.routes.js";
+import { notificationsRouter } from "./notifications.routes.js";
 
 const router = Router();
 
@@ -12,5 +13,6 @@ router.use("/bookings", bookingsRouter);
 router.use("/providers", providersRouter);
 router.use("/categories", categoriesRouter);
 router.use("/dashboard", dashboardRouter);
+router.use("/notifications", notificationsRouter);
 
 export default router;
